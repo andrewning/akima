@@ -52,7 +52,12 @@ class Akima(object):
         """
 
         x = np.array(x)
-        y, dydx = _akima.interp(self.xpt, self.p0, self.p1, self.p2, self.p3, x)
+
+        if x.size == 0:  # error check for empty array
+            y = np.array([])
+            dydx = np.array([])
+        else:
+            y, dydx = _akima.interp(self.xpt, self.p0, self.p1, self.p2, self.p3, x)
 
         if derivatives:
             return y, dydx
