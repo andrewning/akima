@@ -17,11 +17,11 @@ spline = Akima(xpt, ypt)
 # interpolate  (extrapolation will work, but beware the results may be silly)
 n = 50
 x = np.linspace(0.0, 13.0, n)
-y, dydx = spline.interp(x, derivatives=True)
+y, dydx, dydxpt, dydypt = spline.interp(x)
 
-# compare derivatives to finite differencing
+# compare derivatives w.r.t. x to finite differencing
 xstep = x + 1e-6  # can do all steps at same time b.c. they are independent
-ystep = spline.interp(xstep)
+ystep, _, _, _ = spline.interp(xstep)
 fd = (ystep - y)/1e-6
 
 
