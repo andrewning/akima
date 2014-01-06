@@ -20,9 +20,24 @@ x = np.linspace(0.0, 13.0, n)
 y, dydx, dydxpt, dydypt = spline.interp(x)
 
 # compare derivatives w.r.t. x to finite differencing
-xstep = x + 1e-6  # can do all steps at same time b.c. they are independent
+h = 1e-6
+xstep = x + h  # can do all steps at same time b.c. they are independent
 ystep, _, _, _ = spline.interp(xstep)
-fd = (ystep - y)/1e-6
+fd = (ystep - y)/h
+
+# compare derivatives of xpt and ypt for one point
+idx = 3
+xptstep = np.copy(xpt)
+xptstep[idx] += h
+spline = Akima(xptstep, ypt)
+ystep, _, _, _ = spline.interp(x)
+fd2 = (ystep - y)/h
+
+yptstep = np.copy(ypt)
+yptstep[idx] += h
+spline = Akima(xpt, yptstep)
+ystep, _, _, _ = spline.interp(x)
+fd3 = (ystep - y)/h
 
 
 import matplotlib.pyplot as plt
@@ -31,5 +46,14 @@ plt.plot(x, y, '-')
 
 plt.figure()
 plt.plot(x, dydx)
-plt.plot(x, fd)
+plt.plot(x, fd, '--')
+
+plt.figure()
+plt.plot(x, dydxpt[:, idx])
+plt.plot(x, fd2, '--')
+
+plt.figure()
+plt.plot(x, dydypt[:, idx])
+plt.plot(x, fd3, '--')
+
 plt.show()
