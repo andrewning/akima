@@ -79,7 +79,13 @@ class Akima(object):
 
         """
 
-        x = np.array(x)
+        x = np.asarray(x)
+
+        try:
+            n = len(x)
+        except TypeError:  # if x is just a float
+            x = np.array([x])
+            n = 1
 
         if x.size == 0:  # error check for empty array
             y = np.array([])
@@ -92,6 +98,11 @@ class Akima(object):
                 self.dp0_dxpt, self.dp1_dxpt, self.dp2_dxpt, self.dp3_dxpt,
                 self.dp0_dypt, self.dp1_dypt, self.dp2_dypt, self.dp3_dypt)
 
+        if n == 1:
+            y = y[0]
+            dydx = dydx[0]
+            dydxpt = dydxpt[0, :]
+            dydypt = dydypt[0, :]
 
         if self.delta_x == 0.0:
             return y, dydx
