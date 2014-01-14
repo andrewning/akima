@@ -10,7 +10,24 @@ import _akima
 import numpy as np
 
 
+def akima_interp(xpt, ypt, x):
+    """convenience method for those who don't want derivatives
+    and don't want to evaluate the same spline multiple times"""
+
+    p0, p1, p2, p3 = _akima.setup(xpt, ypt, delta_x=0.0)
+
+    npt = len(xpt)
+    zeros = np.zeros((npt-1, npt))
+
+    y, dydx, dydxpt, dydypt = _akima.interp(x, xpt, p0, p1, p2, p3,
+        zeros, zeros, zeros, zeros, zeros, zeros, zeros, zeros)
+
+    return y
+
+
+
 class Akima(object):
+    """class for evaluating Akima spline and its derivatives"""
 
 
     def __init__(self, xpt, ypt, delta_x=0.1):

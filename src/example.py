@@ -7,7 +7,7 @@ Created by Andrew Ning on 2013-12-17.
 """
 
 import numpy as np
-from akima import Akima
+from akima import Akima, akima_interp
 
 # setup spline based on fixed points
 xpt = np.array([1.0, 2.0, 4.0, 6.0, 10.0, 12.0])
@@ -18,6 +18,12 @@ spline = Akima(xpt, ypt)
 n = 50
 x = np.linspace(0.0, 13.0, n)
 y, dydx, dydxpt, dydypt = spline.interp(x)
+
+# an alternative way to call akima if you don't care about derivatives
+# (and also don't care about evaluating the spline multiple times)
+# a slight amount of smoothing is used for the one with derivatives so
+# y will not exactly match y2 unless you set delta_x=0.0 in the Akima constructor
+y2 = akima_interp(xpt, ypt, x)
 
 # compare derivatives w.r.t. x to finite differencing
 h = 1e-6
