@@ -26,6 +26,15 @@ def akima_interp(xpt, ypt, x):
 
 
 
+def akima_interp_with_derivs(xpt, ypt, x, delta_x=0.1):
+
+    a = Akima(xpt, ypt, delta_x)
+
+    return a.interp(x)
+
+
+
+
 class Akima(object):
     """class for evaluating Akima spline and its derivatives"""
 
@@ -80,8 +89,6 @@ class Akima(object):
         ----------
         x : array_like
             x values to sample spline at
-        derivatives : boolean (optional)
-            True if you want to return derivatives (dydx) in addition to function values
 
         Returns
         -------
