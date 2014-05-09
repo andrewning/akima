@@ -4,13 +4,13 @@ subroutine abs_smooth(x, delta_x, y)
     ! so that it is C1 continuous
 
     implicit none
-    integer, parameter :: ReKi = selected_real_kind(15, 307)
+    integer, parameter :: dp = kind(0.d0)
 
     ! in
-    real(ReKi), intent(in) :: x, delta_x
+    real(dp), intent(in) :: x, delta_x
 
     ! out
-    real(ReKi), intent(out) :: y
+    real(dp), intent(out) :: y
 
 
     if (x >= delta_x) then
@@ -18,7 +18,7 @@ subroutine abs_smooth(x, delta_x, y)
     elseif (x <= -delta_x) then
         y = -x
     else
-        y = x**2/(2.0*delta_x) + delta_x/2.0
+        y = x**2/(2.0_dp*delta_x) + delta_x/2.0_dp
     end if
 
 end subroutine abs_smooth
@@ -30,24 +30,24 @@ subroutine setup(n, xpt, ypt, p0, p1, p2, p3, delta_x)
 
     implicit none
 
-    integer, parameter :: ReKi = selected_real_kind(15, 307)
-    real(ReKi), parameter :: eps = 1d-30
+    integer, parameter :: dp = kind(0.d0)
+    real(dp), parameter :: eps = 1d-30
 
     ! in
     integer, intent(in) :: n
-    real(ReKi), dimension(n), intent(in) :: xpt, ypt  ! given points
-    real(ReKi), intent(in) :: delta_x
-    !f2py real(ReKi), intent(in) :: delta_x = 0.1
+    real(dp), dimension(n), intent(in) :: xpt, ypt  ! given points
+    real(dp), intent(in) :: delta_x
+    !f2py real(dp), intent(in) :: delta_x = 0.1
 
     ! out
-    real(ReKi), dimension(n-1), intent(out) :: p0, p1, p2, p3  ! spline coefficients
+    real(dp), dimension(n-1), intent(out) :: p0, p1, p2, p3  ! spline coefficients
 
     ! local
     integer :: i
-    real(ReKi), dimension(-1:n+1) :: m
-    real(ReKi), dimension(n) :: t
-    real(ReKi) :: m1, m2, m3, m4, w1, w2
-    real(ReKi) :: t1, t2, dx
+    real(dp), dimension(-1:n+1) :: m
+    real(dp), dimension(n) :: t
+    real(dp) :: m1, m2, m3, m4, w1, w2
+    real(dp) :: t1, t2, dx
 
     ! compute segment slopes
     do i = 1, n-1
@@ -55,10 +55,10 @@ subroutine setup(n, xpt, ypt, p0, p1, p2, p3, delta_x)
     end do
 
     ! estimation for end points
-    m(0) = 2*m(1) - m(2)
-    m(-1) = 2*m(0) - m(1)
-    m(n) = 2*m(n-1) - m(n-2)
-    m(n+1) = 2*m(n) - m(n-1)
+    m(0) = 2.0_dp*m(1) - m(2)
+    m(-1) = 2.0_dp*m(0) - m(1)
+    m(n) = 2.0_dp*m(n-1) - m(n-2)
+    m(n+1) = 2.0_dp*m(n) - m(n-1)
 
     ! slope at points
     do i = 1, n
@@ -71,7 +71,7 @@ subroutine setup(n, xpt, ypt, p0, p1, p2, p3, delta_x)
         call abs_smooth(m4 - m3, delta_x, w1)
         call abs_smooth(m2 - m1, delta_x, w2)
         if ( w1 < eps .and. w2 < eps ) then
-            t(i) = 0.5*(m2 + m3)  ! special case to avoid divide by zero
+            t(i) = 0.5_dp*(m2 + m3)  ! special case to avoid divide by zero
         else
             t(i) = (w1*m2 + w2*m3) / (w1 + w2)
         end if
@@ -84,8 +84,8 @@ subroutine setup(n, xpt, ypt, p0, p1, p2, p3, delta_x)
         t2 = t(i+1)
         p0(i) = ypt(i)
         p1(i) = t1
-        p2(i) = (3.0*m(i) - 2.0*t1 - t2)/dx
-        p3(i) = (t1 + t2 - 2.0*m(i))/dx**2
+        p2(i) = (3.0_dp*m(i) - 2.0_dp*t1 - t2)/dx
+        p3(i) = (t1 + t2 - 2.0_dp*m(i))/dx**2
     end do
 
 
@@ -99,25 +99,25 @@ subroutine interp(npt, n, x, xpt, p0, p1, p2, p3, &
     ! evaluate the Akima spline and its derivatives
 
     implicit none
-    integer, parameter :: ReKi = selected_real_kind(15, 307)
+    integer, parameter :: dp = kind(0.d0)
 
     ! in
     integer, intent(in) :: npt
-    real(ReKi), dimension(npt), intent(in) :: xpt  ! given x points
-    real(ReKi), dimension(npt-1), intent(in) :: p0, p1, p2, p3  ! spline coefficients
+    real(dp), dimension(npt), intent(in) :: xpt  ! given x points
+    real(dp), dimension(npt-1), intent(in) :: p0, p1, p2, p3  ! spline coefficients
     integer, intent(in) :: n
-    real(ReKi), dimension(n), intent(in) :: x  ! x values to evalute at
-    real(ReKi), dimension(npt-1, npt), intent(in) :: dp0dxpt, dp1dxpt, dp2dxpt, dp3dxpt
-    real(ReKi), dimension(npt-1, npt), intent(in) :: dp0dypt, dp1dypt, dp2dypt, dp3dypt
+    real(dp), dimension(n), intent(in) :: x  ! x values to evalute at
+    real(dp), dimension(npt-1, npt), intent(in) :: dp0dxpt, dp1dxpt, dp2dxpt, dp3dxpt
+    real(dp), dimension(npt-1, npt), intent(in) :: dp0dypt, dp1dypt, dp2dypt, dp3dypt
 
     ! out
-    real(ReKi), dimension(n), intent(out) :: y  ! interpolate y values
-    real(ReKi), dimension(n), intent(out) :: dydx  ! derivative of y w.r.t. x
-    real(ReKi), dimension(n, npt), intent(out) :: dydxpt, dydypt  ! derivative of y w.r.t. xpt and ypt
+    real(dp), dimension(n), intent(out) :: y  ! interpolate y values
+    real(dp), dimension(n), intent(out) :: dydx  ! derivative of y w.r.t. x
+    real(dp), dimension(n, npt), intent(out) :: dydxpt, dydypt  ! derivative of y w.r.t. xpt and ypt
 
     ! local
     integer :: i, j, k
-    real(ReKi) :: dx
+    real(dp) :: dx
 
      ! interpolate at each point
     do i = 1, n
@@ -138,7 +138,7 @@ subroutine interp(npt, n, x, xpt, p0, p1, p2, p3, &
         ! evaluate polynomial (and derivative)
         dx = (x(i) - xpt(j))
         y(i) = p0(j) + p1(j)*dx + p2(j)*dx**2 + p3(j)*dx**3
-        dydx(i) = p1(j) + 2*p2(j)*dx + 3*p3(j)*dx**2
+        dydx(i) = p1(j) + 2.0_dp*p2(j)*dx + 3.0_dp*p3(j)*dx**2
 
         do k = 1, npt
             dydxpt(i, k) = dp0dxpt(j, k) + dp1dxpt(j, k)*dx + dp2dxpt(j, k)*dx**2 + dp3dxpt(j, k)*dx**3
@@ -157,49 +157,49 @@ end subroutine interp
 
 
 !        Generated by TAPENADE     (INRIA, Tropics team)
-!  Tapenade 3.8 (r5001) -  5 Nov 2013 10:56
+!  Tapenade 3.9 (r5096) - 24 Feb 2014 16:54
 !
 !  Differentiation of setup in forward (tangent) mode:
 !   variations   of useful results: p0 p1 p2 p3
 !   with respect to varying inputs: xpt ypt
 !   RW status of diff variables: xpt:in p0:out p1:out p2:out p3:out
 !                ypt:in
+
 SUBROUTINE SETUP_DV(n, xpt, xptd, ypt, yptd, p0, p0d, p1, p1d, p2, p2d, &
 & p3, p3d, delta_x, nbdirs)
 !   USE DIFFSIZES
 !  Hint: nbdirsmax should be the maximum number of differentiation directions
   IMPLICIT NONE
-  INTEGER, PARAMETER :: reki=SELECTED_REAL_KIND(15, 307)
-  REAL(reki), PARAMETER :: eps=1d-30
+  INTEGER, PARAMETER :: dp=KIND(0.d0)
+  REAL(dp), PARAMETER :: eps=1d-30
 ! in
-  INTEGER, INTENT(IN) :: n, nbdirs
+  INTEGER, INTENT(IN) :: n
+  INTEGER, intent(in) :: nbdirs
 ! given points
-  REAL(reki), DIMENSION(n), INTENT(IN) :: xpt, ypt
-  REAL(reki), DIMENSION(nbdirs, n), INTENT(IN) :: xptd, yptd
-  REAL(reki), INTENT(IN) :: delta_x
-!f2py real(ReKi), intent(in) :: delta_x = 0.1
+  REAL(dp), DIMENSION(n), INTENT(IN) :: xpt, ypt
+  REAL(dp), DIMENSION(nbdirs, n), INTENT(IN) :: xptd, yptd
+  REAL(dp), INTENT(IN) :: delta_x
+!f2py real(dp), intent(in) :: delta_x = 0.1
 ! out
 ! spline coefficients
-  REAL(reki), DIMENSION(n - 1), INTENT(OUT) :: p0, p1, p2, p3
-  REAL(reki), DIMENSION(nbdirs, n-1), INTENT(OUT) :: p0d, p1d, p2d, &
-& p3d
+  REAL(dp), DIMENSION(n - 1), INTENT(OUT) :: p0, p1, p2, p3
+  REAL(dp), DIMENSION(nbdirs, n-1), INTENT(OUT) :: p0d, p1d, p2d, p3d
 ! local
   INTEGER :: i
-  REAL(reki), DIMENSION(-1:n + 1) :: m
-  REAL(reki), DIMENSION(nbdirs, -1:n+1) :: md
-  REAL(reki), DIMENSION(n) :: t
-  REAL(reki), DIMENSION(nbdirs, n) :: td
-  REAL(reki) :: m1, m2, m3, m4, w1, w2
-  REAL(reki), DIMENSION(nbdirs) :: m1d, m2d, m3d, m4d, w1d, w2d
-  REAL(reki) :: t1, t2, dx
-  REAL(reki), DIMENSION(nbdirs) :: t1d, t2d, dxd
-  INTRINSIC SELECTED_REAL_KIND
-  REAL(reki) :: arg1
-  REAL(reki), DIMENSION(nbdirs) :: arg1d
+  REAL(dp), DIMENSION(-1:n + 1) :: m
+  REAL(dp), DIMENSION(nbdirs, -1:n+1) :: md
+  REAL(dp), DIMENSION(n) :: t
+  REAL(dp), DIMENSION(nbdirs, n) :: td
+  REAL(dp) :: m1, m2, m3, m4, w1, w2
+  REAL(dp), DIMENSION(nbdirs) :: m1d, m2d, m3d, m4d, w1d, w2d
+  REAL(dp) :: t1, t2, dx
+  REAL(dp), DIMENSION(nbdirs) :: t1d, t2d, dxd
+  INTRINSIC KIND
+  REAL(dp) :: arg1
+  REAL(dp), DIMENSION(nbdirs) :: arg1d
   INTEGER :: nd
-!   INTEGER :: nbdirs
   DO nd=1,nbdirs
-    md(nd, :) = 0.0
+    md(nd, :) = 0.0_dp
   END DO
 ! compute segment slopes
   DO i=1,n-1
@@ -211,17 +211,17 @@ SUBROUTINE SETUP_DV(n, xpt, xptd, ypt, yptd, p0, p0d, p1, p1d, p2, p2d, &
   END DO
   DO nd=1,nbdirs
 ! estimation for end points
-    md(nd, 0) = 2*md(nd, 1) - md(nd, 2)
-    md(nd, -1) = 2*md(nd, 0) - md(nd, 1)
-    md(nd, n) = 2*md(nd, n-1) - md(nd, n-2)
-    md(nd, n+1) = 2*md(nd, n) - md(nd, n-1)
+    md(nd, 0) = 2.0_dp*md(nd, 1) - md(nd, 2)
+    md(nd, -1) = 2.0_dp*md(nd, 0) - md(nd, 1)
+    md(nd, n) = 2.0_dp*md(nd, n-1) - md(nd, n-2)
+    md(nd, n+1) = 2.0_dp*md(nd, n) - md(nd, n-1)
   END DO
-  m(0) = 2*m(1) - m(2)
-  m(-1) = 2*m(0) - m(1)
-  m(n) = 2*m(n-1) - m(n-2)
-  m(n+1) = 2*m(n) - m(n-1)
+  m(0) = 2.0_dp*m(1) - m(2)
+  m(-1) = 2.0_dp*m(0) - m(1)
+  m(n) = 2.0_dp*m(n-1) - m(n-2)
+  m(n+1) = 2.0_dp*m(n) - m(n-1)
   DO nd=1,nbdirs
-    td(nd, :) = 0.0
+    td(nd, :) = 0.0_dp
   END DO
 ! slope at points
   DO i=1,n
@@ -248,9 +248,9 @@ SUBROUTINE SETUP_DV(n, xpt, xptd, ypt, yptd, p0, p0d, p1, p1d, p2, p2d, &
     IF (w1 .LT. eps .AND. w2 .LT. eps) THEN
       DO nd=1,nbdirs
 ! special case to avoid divide by zero
-        td(nd, i) = 0.5*(m2d(nd)+m3d(nd))
+        td(nd, i) = 0.5_dp*(m2d(nd)+m3d(nd))
       END DO
-      t(i) = 0.5*(m2+m3)
+      t(i) = 0.5_dp*(m2+m3)
     ELSE
       DO nd=1,nbdirs
         td(nd, i) = ((w1d(nd)*m2+w1*m2d(nd)+w2d(nd)*m3+w2*m3d(nd))*(w1+&
@@ -260,10 +260,10 @@ SUBROUTINE SETUP_DV(n, xpt, xptd, ypt, yptd, p0, p0d, p1, p1d, p2, p2d, &
     END IF
   END DO
   DO nd=1,nbdirs
-    p0d(nd, :) = 0.0
-    p1d(nd, :) = 0.0
-    p2d(nd, :) = 0.0
-    p3d(nd, :) = 0.0
+    p0d(nd, :) = 0.0_dp
+    p1d(nd, :) = 0.0_dp
+    p2d(nd, :) = 0.0_dp
+    p3d(nd, :) = 0.0_dp
   END DO
 ! polynomial cofficients
   DO i=1,n-1
@@ -276,35 +276,35 @@ SUBROUTINE SETUP_DV(n, xpt, xptd, ypt, yptd, p0, p0d, p1, p1d, p2, p2d, &
       t2d(nd) = td(nd, i+1)
       p0d(nd, i) = yptd(nd, i)
       p1d(nd, i) = t1d(nd)
-      p2d(nd, i) = ((3.0*md(nd, i)-2.0*t1d(nd)-t2d(nd))*dx-(3.0*m(i)-2.0&
-&       *t1-t2)*dxd(nd))/dx**2
-      p3d(nd, i) = ((t1d(nd)+t2d(nd)-2.0*md(nd, i))*dx**2-(t1+t2-2.0*m(i&
-&       ))*2*dx*dxd(nd))/(dx**2)**2
+      p2d(nd, i) = ((3.0_dp*md(nd, i)-2.0_dp*t1d(nd)-t2d(nd))*dx-(3.0_dp&
+&       *m(i)-2.0_dp*t1-t2)*dxd(nd))/dx**2
+      p3d(nd, i) = ((t1d(nd)+t2d(nd)-2.0_dp*md(nd, i))*dx**2-(t1+t2-&
+&       2.0_dp*m(i))*2*dx*dxd(nd))/(dx**2)**2
     END DO
     p0(i) = ypt(i)
     p1(i) = t1
-    p2(i) = (3.0*m(i)-2.0*t1-t2)/dx
-    p3(i) = (t1+t2-2.0*m(i))/dx**2
+    p2(i) = (3.0_dp*m(i)-2.0_dp*t1-t2)/dx
+    p3(i) = (t1+t2-2.0_dp*m(i))/dx**2
   END DO
 END SUBROUTINE SETUP_DV
-
 
 !  Differentiation of abs_smooth in forward (tangent) mode:
 !   variations   of useful results: y
 !   with respect to varying inputs: x
+
 SUBROUTINE ABS_SMOOTH_DV(x, xd, delta_x, y, yd, nbdirs)
 !   USE DIFFSIZES
 !  Hint: nbdirsmax should be the maximum number of differentiation directions
   IMPLICIT NONE
-  INTEGER, PARAMETER :: reki=SELECTED_REAL_KIND(15, 307)
+  INTEGER, PARAMETER :: dp=KIND(0.d0)
 ! in
-  REAL(reki), INTENT(IN) :: x, delta_x
-  REAL(reki), DIMENSION(nbdirs), INTENT(IN) :: xd
-  INTEGER, INTENT(IN) :: nbdirs
+  REAL(dp), INTENT(IN) :: x, delta_x
+  REAL(dp), DIMENSION(nbdirs), INTENT(IN) :: xd
+  INTEGER, intent(in) :: nbdirs
 ! out
-  REAL(reki), INTENT(OUT) :: y
-  REAL(reki), DIMENSION(nbdirs), INTENT(OUT) :: yd
-  INTRINSIC SELECTED_REAL_KIND
+  REAL(dp), INTENT(OUT) :: y
+  REAL(dp), DIMENSION(nbdirs), INTENT(OUT) :: yd
+  INTRINSIC KIND
   INTEGER :: nd
   IF (x .GE. delta_x) THEN
     DO nd=1,nbdirs
@@ -318,8 +318,9 @@ SUBROUTINE ABS_SMOOTH_DV(x, xd, delta_x, y, yd, nbdirs)
     y = -x
   ELSE
     DO nd=1,nbdirs
-      yd(nd) = 2*x*xd(nd)/(2.0*delta_x)
+      yd(nd) = 2.0_dp*x*xd(nd)/(2.0_dp*delta_x)
     END DO
-    y = x**2/(2.0*delta_x) + delta_x/2.0
+    y = x**2/(2.0_dp*delta_x) + delta_x/2.0_dp
   END IF
 END SUBROUTINE ABS_SMOOTH_DV
+
